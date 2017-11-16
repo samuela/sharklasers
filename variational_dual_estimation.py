@@ -188,7 +188,8 @@ def run_conditional_filter(
     y_dim,
     u_dim,
     control=None,
-    callback=None
+    callback=None,
+    num_gradient_steps=1
 ):
   """Run a filter on a given model and update parameters along the way. Supports
   multiple sequences. Uses the L(y_t | y_{1:t-1}) objective.
@@ -262,39 +263,40 @@ def run_conditional_filter(
   callback_log = ([] if callback else None)
 
   for t in range(1, num_steps):
-    loss = 0.0
-    for i in range(num_sequences):
-      x_prev = Variable(Xs[i, t - 1], requires_grad=False)
-      u_prev = Variable(Us[i, t - 1], requires_grad=False)
-      mu_prev = Variable(Mus[i, t - 1], requires_grad=False)
-      s_prev = Variable(Ss[i, t - 1], requires_grad=False)
-      u_t = Variable(Us[i, t], requires_grad=False)
+    for _ in range(num_gradient_steps):
+      loss = 0.0
+      for i in range(num_sequences):
+        x_prev = Variable(Xs[i, t - 1], requires_grad=False)
+        u_prev = Variable(Us[i, t - 1], requires_grad=False)
+        mu_prev = Variable(Mus[i, t - 1], requires_grad=False)
+        s_prev = Variable(Ss[i, t - 1], requires_grad=False)
+        u_t = Variable(Us[i, t], requires_grad=False)
 
-      # Sample from the true model
-      x_t, y_t = forward_sample(x_prev, u_prev)
+        # Sample from the true model
+        x_t, y_t = forward_sample(x_prev, u_prev)
 
-      mu_t, s_t, loss_i = filter_step(
-        y_t,
-        u_t,
-        u_prev,
-        mu_prev,
-        s_prev
-      )
+        mu_t, s_t, loss_i = filter_step(
+          y_t,
+          u_t,
+          u_prev,
+          mu_prev,
+          s_prev
+        )
 
-      # Add the loss for this sequence into the motherload loss
-      loss += loss_i
+        # Add the loss for this sequence into the motherload loss
+        loss += loss_i
 
-      Xs[i, t] = x_t.data
-      Ys[i, t] = y_t.data
-      Us[i, t] = u_t.data
-      Mus[i, t] = mu_t.data
-      Ss[i, t] = s_t.data
+        Xs[i, t] = x_t.data
+        Ys[i, t] = y_t.data
+        Us[i, t] = u_t.data
+        Mus[i, t] = mu_t.data
+        Ss[i, t] = s_t.data
 
-    # Finally take the gradient step on the motherload loss
-    if optimizer:
-      optimizer.zero_grad()
-      loss.backward()
-      optimizer.step()
+      # Finally take the gradient step on the motherload loss
+      if optimizer:
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
     if callback:
       info = {
