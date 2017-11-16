@@ -1,15 +1,12 @@
+"""Simple LDS with linear control"""
+
 import numpy as np
 
 import torch
 from torch.autograd import Variable
-import torch.nn as nn
 
-from online_dual_estimation import build_filter
-from utils import normal_log_prob
+from variational_dual_estimation import build_conditional_filter
 
-
-################################################################################
-# Simple LDS with linear control
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -67,7 +64,12 @@ opt_variables = (
 # optimizer = torch.optim.Adam(opt_variables, lr=learning_rate)
 optimizer = torch.optim.SGD(opt_variables, lr=learning_rate)
 
-step = build_filter(1, emission_log_prob, transition_log_prob, net, optimizer)
+step = build_conditional_filter(
+  1,
+  emission_log_prob,
+  transition_log_prob,
+  net
+)
 
 Xs = [torch.FloatTensor([0.0])]
 Ys = [torch.FloatTensor([0.0])]
@@ -80,6 +82,7 @@ learned_log_stddev_transitions_per_iter = [learned_log_stddev_transition.data[0]
 learned_log_stddev_emissions_per_iter = [learned_log_stddev_emission.data[0]]
 learned_A_per_iter = [learned_A.data[0]]
 
+# TODO: fix this
 for t in range(n_steps):
   print(t)
 

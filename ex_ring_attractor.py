@@ -4,7 +4,7 @@ import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-from online_dual_estimation import *
+from variational_dual_estimation import *
 from utils import normal_log_prob
 
 np.random.seed(0)
