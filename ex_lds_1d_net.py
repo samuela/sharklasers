@@ -20,11 +20,11 @@ y_dim = 1
 u_dim = 1
 
 num_sequences = 8
-num_steps = 500
+num_steps = 250
 mc_samples = 1
-num_gradient_steps = 10
+num_gradient_steps = 5
 
-true_stddev_emission = 0.01
+true_stddev_emission = 0.1
 true_stddev_transition = 1
 true_A = 0.9
 true_C = 1.0
@@ -74,15 +74,19 @@ net = torch.nn.Linear(y_dim + u_dim + x_dim + x_dim, x_dim + x_dim)
 #   torch.nn.Linear(25, 2),
 # )
 
-learning_rate = 1e-3
-opt_variables = (
+net_learning_rate = 1e-6
+model_learning_rate = 1e-3
+model_variables = (
   ([learned_precision_emission] if learned_precision_emission.requires_grad else []) +
   ([learned_precision_transition] if learned_precision_transition.requires_grad else []) +
   ([learned_A] if learned_A.requires_grad else []) +
   ([learned_C] if learned_C.requires_grad else [])
 )
 # optimizer = torch.optim.Adam(opt_variables, lr=learning_rate)
-optimizer = torch.optim.SGD(opt_variables, lr=learning_rate)
+optimizer = torch.optim.SGD([
+  {'params': net.parameters(), 'lr': net_learning_rate},
+  {'params': model_variables, 'lr': model_learning_rate}
+])
 
 step = build_conditional_filter(
   x_dim,
@@ -154,12 +158,13 @@ for i in range(num_sequences):
   )
   plt.suptitle((
     'Dual estimation on a 1-d LDS model with an inference net\n'
-    'optimizer = {}, learning rate = {}, emission stddev = {}, '
-      'transition stddev = {}, A = {}, C = {}\n'
+    'optimizer = {}, net_learning_rate = {}, model_learning_rate = {}, '
+    'emission stddev = {}, transition stddev = {}, A = {}, C = {}\n'
     'mc_samples = {}, num_gradient_steps = {}'
   ).format(
     optimizer.__class__.__name__,
-    learning_rate,
+    net_learning_rate,
+    model_learning_rate,
     true_stddev_emission,
     true_stddev_transition,
     true_A,
