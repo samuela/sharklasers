@@ -9,7 +9,10 @@ from torch.autograd import Variable
 
 from lds_1d_model import build_1d_lds_model, forward_sample, pretty_plot
 from utils import build_1d_kalman_filter
-from variational_dual_estimation import build_conditional_filter, run_conditional_filter
+from variational_dual_estimation import (
+  build_conditional_filter,
+  run_conditional_filter
+)
 
 
 np.random.seed(0)
